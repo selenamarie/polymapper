@@ -91,33 +91,50 @@ $(function() {
       el.appendChild(text)
   })}
 
-  function fetchFeatures(bbox, dataset, callback) {
-
+  function fetchFactories(callback) {
+    // change the source of data here
     $.ajax({
-      url: "http://civicapi.com/" + dataset,
+      url: "http://api.scraperwiki.com/api/1.0/datastore/getdata?&name=nike_contract_factory_disclosure_list",
       dataType: 'jsonp',
-      data: {
-        "bbox": bbox
-      },
       success: callback
     });
-
   }
 
-  var showDataset = function( dataset ) {
-    var bbox = getBB();
-
-    fetchFeatures( bbox, dataset, function( data ){
-
+    //{
+        //"lat": "29.868336", 
+        //"date_scraped": "2011-03-05 22:39:54", 
+        //"line": "['CHINA', 'NINGBO SHENZHOU KNITTING CO. LTD. -#6 GARMENT FACTORY']", 
+        //"lng": "121.54399", 
+        //"key": "1:939"
+    //}, 
+    function showFactories(data) {
+      var features = data.map( function ( afeature ) { 
+            return{ 
+                "type": "Feature", 
+                "geometry": {
+                    "type": "Point", 
+                    "coordinates": [
+                            afeature.lng,
+                            afeature.lat
+                        ]
+                    },
+                    "properties": {
+                        "orig": afeature.line,
+                        "date_scraped": afeature.date_scraped
+                    }
+            }
+        });
+      console.log(JSON.stringify(features));
       var feature = po.geoJson()
-            .features( data.features )
+            .features( features )
             .on( "show", load );
-
-      featuresCache[dataset] = feature;
+      console.log(feature);
 
       map.add( feature );
+  }
 
-    })
+  var removeDataset = function( dataset ) {
+    map.remove( featuresCache[dataset] );
   }
 
   var removeDataset = function( dataset ) {
@@ -190,19 +207,21 @@ $(function() {
   };
 
   // Get all sets
-  $.ajax({ 
-    url: "http://civicapi.com/datasets",
-    dataType: 'jsonp', 
-    success: function(data){ 
-      $.each(data.datasets, function( i, item ){
-        $('<li>', {
-          class: item.name,
-          html: '<input type="checkbox"/>' + item.name.replace('_', ' ')
-        })
-        .appendTo('.sidebar')
-      })
-    } 
-  }); 
+  //$.ajax({ 
+   // url: "http://civicapi.com/datasets",
+    //dataType: 'jsonp', 
+    //success: function(data){ 
+      //$.each(data.datasets, function( i, item ){
+        //$('<li>', {
+          //class: item.name,
+          //html: '<input type="checkbox"/>' + item.name.replace('_', ' ')
+        //})
+        //.appendTo('.sidebar')
+      //})
+    //} 
+  //}); 
+
+  fetchFactories(showFactories);
   
   // Interaction/event binding
   $('[type=checkbox]').live('click', function(){
